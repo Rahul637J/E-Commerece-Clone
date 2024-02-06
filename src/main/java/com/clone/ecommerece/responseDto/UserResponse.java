@@ -16,6 +16,7 @@ import lombok.Setter;
 public class UserResponse {
 
 	private int usersId;
+	private String userName;
 	private String email;
 	private UserRole userRole;
 	private boolean isEmailVerified;
