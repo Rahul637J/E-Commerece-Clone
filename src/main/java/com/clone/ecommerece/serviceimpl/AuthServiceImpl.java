@@ -31,7 +31,7 @@ public class AuthServiceImpl implements AuthService
 	
 	private ResponseStructure<UserResponse> responseStructure;
 	
-	private <T extends User> T mapToUser(UsersRequest userRequest) 
+	private <T extends User> T mapToRespectiveUser(UsersRequest userRequest) 
 	{
 		User user=null;
 		System.out.println(userRequest.getUserRole());
@@ -58,12 +58,13 @@ public class AuthServiceImpl implements AuthService
 				.build();	
 	}
 	
-	private <T extends User>T saveUser(User user) 
+	private <T extends User>T saveUser(UsersRequest userRequest) 
 	{
-		if(user instanceof Seller) 
-		user=sellerRepo.save((Seller)user);
-		else if(user instanceof Customer)
-			user=customerRepo.save((Customer)user);	
+		User user=null;
+		switch (userRequest.getUserRole()) {
+		case CUSTOMER->{user=customerRepo.save(mapToRespectiveUser(userRequest));}
+		case SELLER->{user=sellerRepo.save(mapToRespectiveUser(userRequest));}
+		}
 		return (T) user;
 	}
 	
@@ -76,7 +77,7 @@ public class AuthServiceImpl implements AuthService
 			else
 				System.out.println();
 			return user1;
-		}).orElseGet(saveUser(mapToUser(userRequest)));
+		}).orElseGet(()->saveUser(userRequest));
 		
 		return new ResponseEntity<ResponseStructure<UserResponse>>(responseStructure
 				  .setData(mapToResponse(user))
