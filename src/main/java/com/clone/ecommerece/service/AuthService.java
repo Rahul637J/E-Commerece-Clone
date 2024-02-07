@@ -7,6 +7,8 @@ import com.clone.ecommerece.responseDto.UserResponse;
 import com.clone.ecommerece.util.ResponseStructure;
 
 
-public interface AuthService {
+public interface AuthService 
+{
+	
 	ResponseEntity<ResponseStructure<UserResponse>> addUsers(UsersRequest userRequest);
 }

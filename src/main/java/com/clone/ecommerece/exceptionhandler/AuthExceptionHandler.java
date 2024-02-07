@@ -1,4 +1,4 @@
-package com.clone.ecommerece.util;
+package com.clone.ecommerece.exceptionhandler;
 
 import java.util.Map;
 
@@ -10,9 +10,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.clone.ecommerece.exception.DuplicateRegisterException;
 
 @RestControllerAdvice
-public class ApplicationExceptionHandler 
+public class AuthExceptionHandler 
 {
-	
 	private ResponseEntity<Object> error(HttpStatus status,String message,Object rootCause)
 	{
 		return new ResponseEntity<Object>(Map.of(
