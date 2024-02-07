@@ -14,7 +14,6 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import lombok.AllArgsConstructor;
 
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -33,7 +32,6 @@ public class SecurityConfig {
 	SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 		return httpSecurity.csrf(csrf -> csrf.disable())
 				.authorizeHttpRequests(auth -> auth.requestMatchers("/**").permitAll()
-//						.requestMatchers("users/{userId}/schools").hasRole("ADMIN")
 						.anyRequest().authenticated())
 				.formLogin(Customizer.withDefaults()).build();
 	}
