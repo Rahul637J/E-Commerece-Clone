@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import com.clone.ecommerece.entity.Customer;
 import com.clone.ecommerece.entity.Seller;
 import com.clone.ecommerece.entity.User;
-import com.clone.ecommerece.exception.DuplicateRegisterException;
+import com.clone.ecommerece.exception.UserNameAlreadyVerifiedEcxeption;
 import com.clone.ecommerece.repo.CustomerRepo;
 import com.clone.ecommerece.repo.SellerRepo;
 import com.clone.ecommerece.repo.UserRepo;
@@ -15,8 +15,8 @@ import com.clone.ecommerece.requestDto.UsersRequest;
 import com.clone.ecommerece.responseDto.UserResponse;
 import com.clone.ecommerece.service.AuthService;
 import com.clone.ecommerece.util.ResponseStructure;
+
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 
 @Service
 @AllArgsConstructor
@@ -31,7 +31,7 @@ public class AuthServiceImpl implements AuthService
 	
 	private ResponseStructure<UserResponse> responseStructure;
 	
-	private <T extends User> T mapToUser(UsersRequest userRequest) 
+	private <T extends User> T mapToRespectiveUser(UsersRequest userRequest) 
 	{
 		User user=null;
 		System.out.println(userRequest.getUserRole());
@@ -43,6 +43,7 @@ public class AuthServiceImpl implements AuthService
 	    user.setPassword(userRequest.getPassword());
 	    user.setUserRole(userRequest.getUserRole());
 		user.setUserName(userRequest.getEmail().split("@")[0]);
+//		userRepo.save(user);
 		return (T) user;
 	}
 	
@@ -57,24 +58,31 @@ public class AuthServiceImpl implements AuthService
 				.build();	
 	}
 	
-	private <T extends User>T saveUser(User user) 
+	private <T extends User>T saveUser(UsersRequest userRequest) 
 	{
-		if(user instanceof Seller) 
-		user=sellerRepo.save((Seller)user);
-		else if(user instanceof Customer)
-			user=customerRepo.save((Customer)user);	
+		User user=null;
+		switch (userRequest.getUserRole()) {
+		case CUSTOMER->{user=customerRepo.save(mapToRespectiveUser(userRequest));}
+		case SELLER->{user=sellerRepo.save(mapToRespectiveUser(userRequest));}
+		}
 		return (T) user;
 	}
 	
 	@Override
 	public ResponseEntity<ResponseStructure<UserResponse>> addUsers(UsersRequest userRequest) 
 	{
-		if(!userRepo.existsByEmail(userRequest.getEmail())) 
-//			UserResponse response = mapToResponse(saveUser(mapToUser(userRequest)));
-			return new ResponseEntity<ResponseStructure<UserResponse>>(responseStructure.setData(mapToResponse(saveUser(mapToUser(userRequest)))).setMsg("Accepted But need Verified")
-					.setStatus(HttpStatus.ACCEPTED.value()),HttpStatus.ACCEPTED);
-		else
-			throw new DuplicateRegisterException("Email already exist");
+		User user = userRepo.findByUserName(userRequest.getEmail().split("@")[0]).map(user1->{
+			if(user1.isEmailVerified())
+				throw new UserNameAlreadyVerifiedEcxeption("UserName is already verified with this email");
+			else
+				System.out.println();
+			return user1;
+		}).orElseGet(()->saveUser(userRequest));
+		
+		return new ResponseEntity<ResponseStructure<UserResponse>>(responseStructure
+				  .setData(mapToResponse(user))
+				  .setMsg("Plese verify the email using Otp which is sent to your email")
+				  .setStatus(HttpStatus.ACCEPTED.value()),HttpStatus.ACCEPTED);
 	}
 }	
 

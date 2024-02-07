@@ -15,13 +15,13 @@ import lombok.AllArgsConstructor;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/ecc/v1")
+@RequestMapping("/e-commerec/v1/api")
 public class AuthController 
 {
 	private AuthService authService;
 	
-	@PostMapping("/addusers")
-	public  ResponseEntity<ResponseStructure<UserResponse>> addUsers(@RequestBody UsersRequest userRequest)
+	@PostMapping("/users")
+	public  ResponseEntity<ResponseStructure<UserResponse>> addUser(@RequestBody UsersRequest userRequest)
 	{
 		System.out.println(userRequest.getEmail()+userRequest.getUserRole());
 		 return authService.addUsers(userRequest);
