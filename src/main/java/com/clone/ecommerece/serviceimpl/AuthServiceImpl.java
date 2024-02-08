@@ -1,26 +1,44 @@
 package com.clone.ecommerece.serviceimpl;
 
+import java.util.Date;
+import java.util.Random;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.clone.ecommerece.cache.CacheStore;
 import com.clone.ecommerece.entity.Customer;
 import com.clone.ecommerece.entity.Seller;
 import com.clone.ecommerece.entity.User;
+import com.clone.ecommerece.exception.InvalidOTPException;
+import com.clone.ecommerece.exception.OtpExpiredException;
+import com.clone.ecommerece.exception.SessionExpiredException;
 import com.clone.ecommerece.exception.UserNameAlreadyVerifiedEcxeption;
 import com.clone.ecommerece.repo.CustomerRepo;
 import com.clone.ecommerece.repo.SellerRepo;
 import com.clone.ecommerece.repo.UserRepo;
 import com.clone.ecommerece.requestDto.UsersRequest;
+import com.clone.ecommerece.requestDto.otpModel;
 import com.clone.ecommerece.responseDto.UserResponse;
 import com.clone.ecommerece.service.AuthService;
+import com.clone.ecommerece.util.MessageStructure;
 import com.clone.ecommerece.util.ResponseStructure;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @AllArgsConstructor
 //@NoArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService
 {
 	private UserRepo userRepo;
@@ -29,7 +47,15 @@ public class AuthServiceImpl implements AuthService
 	
 	private CustomerRepo customerRepo;
 	
+	private PasswordEncoder passwordEncoder;
+	
+	private CacheStore<String> cacheStoreOtp;
+	
 	private ResponseStructure<UserResponse> responseStructure;
+	
+	private CacheStore<User> cacheStoreuser;
+	
+	private JavaMailSender javaMailSender;
 	
 	private <T extends User> T mapToRespectiveUser(UsersRequest userRequest) 
 	{
@@ -40,7 +66,7 @@ public class AuthServiceImpl implements AuthService
 	    case CUSTOMER ->{user =new Customer();}
 	    }
 	    user.setEmail(userRequest.getEmail());
-	    user.setPassword(userRequest.getPassword());
+	    user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
 	    user.setUserRole(userRequest.getUserRole());
 		user.setUserName(userRequest.getEmail().split("@")[0]);
 //		userRepo.save(user);
@@ -71,18 +97,101 @@ public class AuthServiceImpl implements AuthService
 	@Override
 	public ResponseEntity<ResponseStructure<UserResponse>> addUsers(UsersRequest userRequest) 
 	{
-		User user = userRepo.findByUserName(userRequest.getEmail().split("@")[0]).map(user1->{
-			if(user1.isEmailVerified())
-				throw new UserNameAlreadyVerifiedEcxeption("UserName is already verified with this email");
-			else
-				System.out.println();
-			return user1;
-		}).orElseGet(()->saveUser(userRequest));
-		
+		System.out.println(userRepo.existsByEmail(userRequest.getEmail())+" ,122");
+		if(userRepo.existsByEmail(userRequest.getEmail()))throw new UserNameAlreadyVerifiedEcxeption("User Already Exists");
+			
+			String OTP=otpGenerator();
+			User user = mapToRespectiveUser(userRequest);
+			cacheStoreuser.add(userRequest.getEmail(), user);
+			cacheStoreOtp.add(userRequest.getEmail(), OTP);
+			try {
+				sendOtpToMail(user, OTP);
+			} catch (MessagingException e) {
+				log.error("The email does not exist");
+			}
+			
 		return new ResponseEntity<ResponseStructure<UserResponse>>(responseStructure
 				  .setData(mapToResponse(user))
-				  .setMsg("Plese verify the email using Otp which is sent to your email")
+				  .setMsg("Plese verify the otp :"+OTP)
 				  .setStatus(HttpStatus.ACCEPTED.value()),HttpStatus.ACCEPTED);
 	}
+
+	@Override
+	public ResponseEntity<String> verifyOtp(otpModel otp) 
+	{
+		User user = cacheStoreuser.get(otp.getEmail());
+		String OTP = cacheStoreOtp.get(otp.getEmail());
+		System.out.println(OTP);
+		if(user==null) throw new SessionExpiredException("Session expired ====> Register again");	
+		if(otp==null) throw new OtpExpiredException("OTP expired ===> click resend OTP");
+		System.out.println(otp.getOtp());
+		if(!OTP.equals(otp.getOtp())) throw new InvalidOTPException("OTP mismatch");
+		
+		user.setEmailVerified(true);
+		userRepo.save(user);
+		try {
+			sendResponseToMail(user);
+		} catch (MessagingException e) {
+			log.error("The poor internet connectivity");
+		}
+		return new ResponseEntity<String>("Registration successful",HttpStatus.CREATED);	
+	}
+	
+	private String otpGenerator()
+	{
+		return ""+(int) (100000 + Math.random() * 900000);//God's way String.valueOf(new Random().nextInt(100000,999999)//
+	}
+	
+	@Async
+	private void sendMail(MessageStructure messageStructure) throws MessagingException
+	{
+		MimeMessage mimeMessage=javaMailSender.createMimeMessage();
+		MimeMessageHelper helper=new MimeMessageHelper(mimeMessage, true);
+		helper.setTo(messageStructure.getTo());
+		helper.setSubject(messageStructure.getSubject());
+		helper.setSentDate(messageStructure.getSentDate());
+		helper.setText(messageStructure.getText());
+		javaMailSender.send(mimeMessage);
+	}
+	
+	
+	private void sendOtpToMail(User user,String OTP)throws MessagingException
+	{
+		sendMail(
+		MessageStructure.builder()
+		.to(user.getEmail())
+		.subject("Complete your verification by using this OTP")
+		.sentDate(new Date())
+		.text(
+				"hey,  "+user.getEmail()
+				+"Good to see you in Our TOMKart,"
+				+"<h1>"+OTP+"</h1>"
+				+"Note : the OTP expires in 1 minute"
+				+"<br><br>"
+				+"with best regards<br>"
+				+"TOMKart"
+				)
+		.build());
+	}
+	
+	private void sendResponseToMail(User user)throws MessagingException
+	{
+		sendMail(
+		MessageStructure.builder()
+		.to(user.getEmail())
+		.subject("Complete your verification by using this OTP")
+		.sentDate(new Date())
+		.text(
+				"<h1>hey,  "+user.getEmail()
+				+"has successfully registered<h1>"
+				+"Good to see you in Our TOMKart,"
+				+"<br><br>"
+				+"with best regards<br>"
+				+"TOMKart"
+				)
+		.build());
+	}
+	
+			
 }	
 

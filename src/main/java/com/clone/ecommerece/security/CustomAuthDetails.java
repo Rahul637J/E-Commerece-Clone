@@ -13,7 +13,6 @@ import com.clone.ecommerece.entity.User;
 import lombok.NoArgsConstructor;
 
 @Component
-
 @NoArgsConstructor
 public class CustomAuthDetails implements UserDetails{
 	
