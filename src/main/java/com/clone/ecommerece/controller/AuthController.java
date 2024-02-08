@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clone.ecommerece.requestDto.UsersRequest;
+import com.clone.ecommerece.requestDto.otpModel;
 import com.clone.ecommerece.responseDto.UserResponse;
 import com.clone.ecommerece.service.AuthService;
 import com.clone.ecommerece.util.ResponseStructure;
@@ -23,7 +24,13 @@ public class AuthController
 	@PostMapping("/users")
 	public  ResponseEntity<ResponseStructure<UserResponse>> addUser(@RequestBody UsersRequest userRequest)
 	{
-		System.out.println(userRequest.getEmail()+userRequest.getUserRole());
+//		System.out.println(userRequest.getEmail()+userRequest.getUserRole());
 		 return authService.addUsers(userRequest);
+	}
+	
+	@PostMapping("/users/verifyotp")
+	public ResponseEntity<String> verifyOtp(@RequestBody otpModel otp)
+	{
+		return authService.verifyOtp(otp);
 	}
 }
