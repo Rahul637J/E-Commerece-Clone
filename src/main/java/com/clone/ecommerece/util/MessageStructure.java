@@ -1,6 +1,6 @@
-package com.clone.ecommerece.requestDto;
+package com.clone.ecommerece.util;
 
-import com.clone.ecommerece.enums.UserRole;
+import java.util.Date;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,8 +13,13 @@ import lombok.Setter;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UsersRequest {
-	private String email;
-	private String password;
-	private UserRole userRole;
+public class MessageStructure 
+{
+	private String to;
+	private String subject;
+	private Date sentDate;
+	private String text;
+	
+	
+
 }
