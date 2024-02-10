@@ -27,11 +27,13 @@ public class JwtService
 	
 	public String generateAccessToken(String userName)
 	{
+		System.out.println(generateJwt(new HashMap<String,Object>(),userName,accessExpirationInSeconds*1000l));
 		return generateJwt(new HashMap<String,Object>(),userName,accessExpirationInSeconds*1000l);
 	}
 	
 	public String generateRefreshToken(String userName)
 	{
+		System.out.println(generateJwt(new HashMap<String,Object>(),userName,refreshExpirationInSeconds*1000l));
 		return generateJwt(new HashMap<String,Object>(),userName,refreshExpirationInSeconds*1000l);
 	}
 	
@@ -41,7 +43,7 @@ public class JwtService
 				.setClaims(claims)
 				.setSubject(userName)
 				.setIssuedAt(new Date())
-				.setExpiration(new Date(System.currentTimeMillis()+accessExpirationInSeconds*1000l))
+				.setExpiration(new Date(System.currentTimeMillis()+expiry))
 				.signWith(getSignature(),SignatureAlgorithm.HS512)
 				.compact();
 	}

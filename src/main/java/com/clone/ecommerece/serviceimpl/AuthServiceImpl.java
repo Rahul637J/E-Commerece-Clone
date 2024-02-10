@@ -167,7 +167,7 @@ public class AuthServiceImpl implements AuthService
 	{
 		//generating access token and refresh token
 		String accessToken = jwtService.generateAccessToken(user.getUserName());
-		String refreshToken = jwtService.generateRefreshToken(accessToken);
+		String refreshToken = jwtService.generateRefreshToken(user.getUserName());
 		
 		//adding access anf refresh tokens cookies to the response
 		httpServletResponse.addCookie(cookieManager.configure(new Cookie("at", accessToken), accessExpiryInSeconds));
@@ -202,7 +202,7 @@ public class AuthServiceImpl implements AuthService
 		helper.setTo(messageStructure.getTo());
 		helper.setSubject(messageStructure.getSubject());
 		helper.setSentDate(messageStructure.getSentDate());
-		helper.setText(messageStructure.getText());
+		helper.setText(messageStructure.getText(),true);
 		javaMailSender.send(mimeMessage);
 	}
 	
@@ -215,15 +215,15 @@ public class AuthServiceImpl implements AuthService
 		.subject("Complete your verification by using this OTP")
 		.sentDate(new Date())
 		.text(
-				"hey,  "+user.getEmail()
-				+"Good to see you in Our TOMKart,"
-				+"<h1>"+OTP+"</h1>"
-				+"Note : the OTP expires in 1 minute"
+				"hey, "+user.getUserName()
+				+"<h3>Good To See You Intrested in Our E-Commerce Api,<h3>"
+				+"<h3>Complete Your Registration Using the OTP<h3> <br>"
+				+"<h1>"+OTP+"<h1><br>"
+				+"<h3>Note: The Method Is Expired In 5 Minutes<h3>"
 				+"<br><br>"
-				+"with best regards<br>"
-				+"TOMKart"
-				)
-		.build());
+				+"<h3>With Best Regards<h3><br>"
+				+"<h1>E-Commerce Api<h1>"
+				).build());
 	}
 	
 	private void sendResponseToMail(User user)throws MessagingException
@@ -234,14 +234,18 @@ public class AuthServiceImpl implements AuthService
 		.subject("Complete your verification by using this OTP")
 		.sentDate(new Date())
 		.text(
-				"<h1>hey,  "+user.getEmail()
-				+"has successfully registered<h1>"
-				+"Good to see you in Our TOMKart,"
-				+"<br><br>"
-				+"with best regards<br>"
-				+"TOMKart"
-				)
-		.build());
+
+				"Dear, "+"<h2>"+user.getUserName()+"<h2>"
+						+"<h3>Congratulations! 🎉..,Good To See You Intrested in Our E-Commerce Api,<h3>"
+						+"<h3>Sucessfully Completed Your Registration to E-Commerce Api<h3> <br>"
+						+"<h3>Your email has been successfully verified, and you're now officially registered with E-Commerce Api.<h3>"
+						+"<br>"
+						+"<h3>Let's get started on your e-commerce journey! 🚀<h3>"
+						+"<br>"
+						+"<h3>With Best Regards<h3><br>"
+						+"<h2>Mr.Somnath<h2>"
+						+"<h1>E-Commerce Api<h1>"
+				).build());
 	}
 	
 	private <T extends User> T mapToRespectiveUser(UsersRequest userRequest) 
