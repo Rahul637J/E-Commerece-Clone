@@ -12,6 +12,7 @@ import com.clone.ecommerece.exception.InvalidOTPException;
 import com.clone.ecommerece.exception.OtpExpiredException;
 import com.clone.ecommerece.exception.SessionExpiredException;
 import com.clone.ecommerece.exception.UserNameAlreadyVerifiedEcxeption;
+import com.clone.ecommerece.exception.UserNotLoggedInException;
 
 @RestControllerAdvice
 public class AuthExceptionHandler 
@@ -52,7 +53,13 @@ public class AuthExceptionHandler
 	@ExceptionHandler(InvalidOTPException.class)
 	public ResponseEntity<Object> invalidOTPException(InvalidOTPException exception)
 	{
-		return error(HttpStatus.BAD_REQUEST,"OTP Expired Re-send OTP",exception.getMessage());
+		return error(HttpStatus.BAD_REQUEST,"OTP Not matched!!!",exception.getMessage());
+	}
+	
+	@ExceptionHandler(UserNotLoggedInException.class)
+	public ResponseEntity<Object> userNotLoggedInException(UserNotLoggedInException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"LogIn first to logout",exception.getMessage());
 	}
 	
 

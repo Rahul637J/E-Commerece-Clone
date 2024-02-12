@@ -1,11 +1,14 @@
 package com.clone.ecommerece.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.clone.ecommerece.entity.AccessToken;
+import com.clone.ecommerece.entity.RefreshToken;
 import com.clone.ecommerece.requestDto.AuthRequest;
 import com.clone.ecommerece.requestDto.UsersRequest;
 import com.clone.ecommerece.requestDto.otpModel;
@@ -27,7 +30,6 @@ public class AuthController
 	@PostMapping("/users")
 	public  ResponseEntity<ResponseStructure<UserResponse>> addUser(@RequestBody UsersRequest userRequest)
 	{
-//		System.out.println(userRequest.getEmail()+userRequest.getUserRole());
 		 return authService.addUsers(userRequest);
 	}
 	
@@ -41,5 +43,12 @@ public class AuthController
 	public ResponseEntity<ResponseStructure<AuthResponse>> login(@RequestBody AuthRequest authRequest,HttpServletResponse httpServletResponse)
 	{
 		return authService.login(authRequest,httpServletResponse);
+	}
+	
+	@PostMapping("/logout")
+	public ResponseEntity<ResponseStructure<String>>logout(@CookieValue(value = "at",required = false) String at,
+			@CookieValue (value = "rt",required = false)String rt,HttpServletResponse httpServletResponse)
+	{
+		return authService.logout(at,rt,httpServletResponse);
 	}
 }

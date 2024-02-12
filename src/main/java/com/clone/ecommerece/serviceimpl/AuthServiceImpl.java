@@ -26,6 +26,7 @@ import com.clone.ecommerece.exception.InvalidOTPException;
 import com.clone.ecommerece.exception.OtpExpiredException;
 import com.clone.ecommerece.exception.SessionExpiredException;
 import com.clone.ecommerece.exception.UserNameAlreadyVerifiedEcxeption;
+import com.clone.ecommerece.exception.UserNotLoggedInException;
 import com.clone.ecommerece.repo.AccessTokenRepo;
 import com.clone.ecommerece.repo.CustomerRepo;
 import com.clone.ecommerece.repo.RefreshTokenRepo;
@@ -45,6 +46,7 @@ import com.clone.ecommerece.util.ResponseStructure;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,13 +73,14 @@ public class AuthServiceImpl implements AuthService
 	private AccessTokenRepo accessTokenRepo;
 	private RefreshTokenRepo refreshTokenRepo;
 	private ResponseStructure<AuthResponse> authStructure;
+	private ResponseStructure<String> servletStruture;
 
 	public AuthServiceImpl(UserRepo userRepo, SellerRepo sellerRepo, CustomerRepo customerRepo,
 			PasswordEncoder passwordEncoder, CacheStore<String> cacheStoreOtp,
 			ResponseStructure<UserResponse> responseStructure, CacheStore<User> cacheStoreuser,
 			JavaMailSender javaMailSender, AuthenticationManager authenticationManager, CookieManager cookieManager,
 			JwtService jwtService, AccessTokenRepo accessTokenRepo, RefreshTokenRepo refreshTokenRepo,
-			ResponseStructure<AuthResponse> authStructure) {
+			ResponseStructure<AuthResponse> authStructure,ResponseStructure<String> servletStruture ) {
 		super();
 		this.userRepo = userRepo;
 		this.sellerRepo = sellerRepo;
@@ -93,6 +96,7 @@ public class AuthServiceImpl implements AuthService
 		this.accessTokenRepo = accessTokenRepo;
 		this.refreshTokenRepo = refreshTokenRepo;
 		this.authStructure = authStructure;
+		this.servletStruture=servletStruture;
 	}
 
 	@Override
@@ -123,7 +127,7 @@ public class AuthServiceImpl implements AuthService
 		User user = cacheStoreuser.get(otp.getEmail());
 		String OTP = cacheStoreOtp.get(otp.getEmail());
 		System.out.println(OTP);
-		if(user==null) throw new SessionExpiredException("Session expired ====> Register again");	
+		if(user==null) throw new SessionExpiredException("Session expired ===> Register again");	
 		if(otp==null) throw new OtpExpiredException("OTP expired ===> click resend OTP");
 		System.out.println(otp.getOtp());
 		if(!OTP.equals(otp.getOtp())) throw new InvalidOTPException("OTP mismatch");
@@ -161,6 +165,28 @@ public class AuthServiceImpl implements AuthService
 			}).get();
 	}
 	
+	@Override
+	public ResponseEntity<ResponseStructure<String>> logout(String at,String rt, HttpServletResponse httpServletResponse) 
+	{
+		if(at==null && rt==null)throw new UserNotLoggedInException("User Not LoggedIn!!!!!");
+		accessTokenRepo.findByToken(at).ifPresent(accessToken->{
+			accessToken.setBlocked(true);
+			accessTokenRepo.save(accessToken);
+		});
+		refreshTokenRepo.findByToken(rt).ifPresent(refreshToken->{
+			refreshToken.setBlocked(true);
+			refreshTokenRepo.save(refreshToken);
+		});
+		
+		httpServletResponse.addCookie(cookieManager.invalidate(new Cookie("at","")));
+		httpServletResponse.addCookie(cookieManager.invalidate(new Cookie("rt","")));
+		
+		servletStruture.setStatus(HttpStatus.ACCEPTED.value());
+		servletStruture.setMsg("User Successfully Logged Out");
+		servletStruture.setData("LogIn for access");
+		return new ResponseEntity<ResponseStructure<String>>(servletStruture,HttpStatus.ACCEPTED);
+	}
+	
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------	
 	
 	private void grantAccess(HttpServletResponse httpServletResponse,User user)
@@ -191,7 +217,7 @@ public class AuthServiceImpl implements AuthService
 	
 	private String otpGenerator()
 	{
-		return ""+(int) (100000 + Math.random() * 900000);//God's way String.valueOf(new Random().nextInt(100000,999999)//
+		return ""+(int) (100000 + Math.random() * 999999);//God's way String.valueOf(new Random().nextInt(100000,999999)//
 	}
 	
 	@Async
@@ -205,7 +231,6 @@ public class AuthServiceImpl implements AuthService
 		helper.setText(messageStructure.getText(),true);
 		javaMailSender.send(mimeMessage);
 	}
-	
 	
 	private void sendOtpToMail(User user,String OTP)throws MessagingException
 	{
@@ -234,7 +259,6 @@ public class AuthServiceImpl implements AuthService
 		.subject("Complete your verification by using this OTP")
 		.sentDate(new Date())
 		.text(
-
 				"Dear, "+"<h2>"+user.getUserName()+"<h2>"
 						+"<h3>Congratulations! 🎉..,Good To See You Intrested in Our E-Commerce Api,<h3>"
 						+"<h3>Sucessfully Completed Your Registration to E-Commerce Api<h3> <br>"

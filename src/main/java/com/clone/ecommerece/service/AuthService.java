@@ -20,4 +20,6 @@ public interface AuthService
 	ResponseEntity<String> verifyOtp(otpModel otp);
 
 	ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest authRequest, HttpServletResponse httpServletResponse);
+
+	ResponseEntity<ResponseStructure<String>> logout(String at, String rt, HttpServletResponse httpServletResponse);
 }
