@@ -27,13 +27,11 @@ public class JwtService
 	
 	public String generateAccessToken(String userName)
 	{
-		System.out.println(generateJwt(new HashMap<String,Object>(),userName,accessExpirationInSeconds*1000l));
 		return generateJwt(new HashMap<String,Object>(),userName,accessExpirationInSeconds*1000l);
 	}
 	
 	public String generateRefreshToken(String userName)
 	{
-		System.out.println(generateJwt(new HashMap<String,Object>(),userName,refreshExpirationInSeconds*1000l));
 		return generateJwt(new HashMap<String,Object>(),userName,refreshExpirationInSeconds*1000l);
 	}
 	
