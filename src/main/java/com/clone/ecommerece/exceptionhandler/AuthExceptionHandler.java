@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.clone.ecommerece.exception.CookiesNotCreatedException;
 import com.clone.ecommerece.exception.DuplicateRegisterException;
 import com.clone.ecommerece.exception.InvalidOTPException;
 import com.clone.ecommerece.exception.OtpExpiredException;
@@ -39,13 +40,13 @@ public class AuthExceptionHandler
 	}
 	
 	@ExceptionHandler(SessionExpiredException.class)
-	public ResponseEntity<Object> SessionExpiredExceptionException(SessionExpiredException exception)
+	public ResponseEntity<Object> sessionExpiredExceptionException(SessionExpiredException exception)
 	{
 		return error(HttpStatus.BAD_REQUEST,"Session Expired Re-register",exception.getMessage());
 	}
 	
 	@ExceptionHandler(OtpExpiredException.class)
-	public ResponseEntity<Object> OtpExpiredException(OtpExpiredException exception)
+	public ResponseEntity<Object> otpExpiredException(OtpExpiredException exception)
 	{
 		return error(HttpStatus.BAD_REQUEST,"OTP Expired Re-send OTP",exception.getMessage());
 	}
@@ -62,5 +63,9 @@ public class AuthExceptionHandler
 		return error(HttpStatus.BAD_REQUEST,"LogIn first to logout",exception.getMessage());
 	}
 	
-
+	@ExceptionHandler(CookiesNotCreatedException.class)
+	public ResponseEntity<Object> cookiesNotCreatedException(CookiesNotCreatedException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"Cookies not created",exception.getMessage());
+	}
 }

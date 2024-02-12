@@ -7,6 +7,7 @@ import com.clone.ecommerece.requestDto.UsersRequest;
 import com.clone.ecommerece.requestDto.otpModel;
 import com.clone.ecommerece.responseDto.AuthResponse;
 import com.clone.ecommerece.responseDto.UserResponse;
+import com.clone.ecommerece.util.CommonReponse;
 import com.clone.ecommerece.util.ResponseStructure;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,4 +23,9 @@ public interface AuthService
 	ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest authRequest, HttpServletResponse httpServletResponse);
 
 	ResponseEntity<ResponseStructure<String>> logout(String at, String rt, HttpServletResponse httpServletResponse);
+
+	ResponseEntity<CommonReponse> revokeOther(String at, String rt,
+			HttpServletResponse httpServletResponse);
+
+	ResponseEntity<CommonReponse> revokeOtherDeviceAccess(String accessToken, String refreshToken);
 }
