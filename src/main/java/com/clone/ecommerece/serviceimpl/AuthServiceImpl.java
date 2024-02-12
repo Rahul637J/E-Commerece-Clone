@@ -2,6 +2,7 @@ package com.clone.ecommerece.serviceimpl;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +41,7 @@ import com.clone.ecommerece.responseDto.AuthResponse;
 import com.clone.ecommerece.responseDto.UserResponse;
 import com.clone.ecommerece.security.JwtService;
 import com.clone.ecommerece.service.AuthService;
+import com.clone.ecommerece.util.CommonReponse;
 import com.clone.ecommerece.util.CookieManager;
 import com.clone.ecommerece.util.MessageStructure;
 import com.clone.ecommerece.util.ResponseStructure;
@@ -66,21 +69,26 @@ public class AuthServiceImpl implements AuthService
 	private AuthenticationManager authenticationManager;
 	private CookieManager cookieManager;
 	private JwtService jwtService;
-	@Value("${myapp.access.expiry}")
-	private int accessExpiryInSeconds;
-	@Value("${myapp.refresh.expiry}")
-	private int refreshExpiryInSeconds;
 	private AccessTokenRepo accessTokenRepo;
 	private RefreshTokenRepo refreshTokenRepo;
 	private ResponseStructure<AuthResponse> authStructure;
 	private ResponseStructure<String> servletStruture;
+	private CommonReponse commonStructure;
+	
+	@Value("${myapp.access.expiry}")
+	private int accessExpiryInSeconds;
+	@Value("${myapp.refresh.expiry}")
+	private int refreshExpiryInSeconds;
+	
+
 
 	public AuthServiceImpl(UserRepo userRepo, SellerRepo sellerRepo, CustomerRepo customerRepo,
 			PasswordEncoder passwordEncoder, CacheStore<String> cacheStoreOtp,
 			ResponseStructure<UserResponse> responseStructure, CacheStore<User> cacheStoreuser,
 			JavaMailSender javaMailSender, AuthenticationManager authenticationManager, CookieManager cookieManager,
 			JwtService jwtService, AccessTokenRepo accessTokenRepo, RefreshTokenRepo refreshTokenRepo,
-			ResponseStructure<AuthResponse> authStructure,ResponseStructure<String> servletStruture ) {
+			ResponseStructure<AuthResponse> authStructure, ResponseStructure<String> servletStruture,
+			CommonReponse commonStructure) {
 		super();
 		this.userRepo = userRepo;
 		this.sellerRepo = sellerRepo;
@@ -96,7 +104,8 @@ public class AuthServiceImpl implements AuthService
 		this.accessTokenRepo = accessTokenRepo;
 		this.refreshTokenRepo = refreshTokenRepo;
 		this.authStructure = authStructure;
-		this.servletStruture=servletStruture;
+		this.servletStruture = servletStruture;
+		this.commonStructure = commonStructure;
 	}
 
 	@Override
@@ -104,7 +113,6 @@ public class AuthServiceImpl implements AuthService
 	{
 		System.out.println(userRepo.existsByEmail(userRequest.getEmail())+" ,122");
 		if(userRepo.existsByEmail(userRequest.getEmail()))throw new UserNameAlreadyVerifiedEcxeption("User Already Exists");
-			
 			String OTP=otpGenerator();
 			User user = mapToRespectiveUser(userRequest);
 			cacheStoreuser.add(userRequest.getEmail(), user);
@@ -126,12 +134,11 @@ public class AuthServiceImpl implements AuthService
 	{
 		User user = cacheStoreuser.get(otp.getEmail());
 		String OTP = cacheStoreOtp.get(otp.getEmail());
-		System.out.println(OTP);
+//		System.out.println(OTP);
 		if(user==null) throw new SessionExpiredException("Session expired ===> Register again");	
 		if(otp==null) throw new OtpExpiredException("OTP expired ===> click resend OTP");
-		System.out.println(otp.getOtp());
+//		System.out.println(otp.getOtp());
 		if(!OTP.equals(otp.getOtp())) throw new InvalidOTPException("OTP mismatch");
-		
 		user.setEmailVerified(true);
 		userRepo.save(user);
 		try {
@@ -187,6 +194,45 @@ public class AuthServiceImpl implements AuthService
 		return new ResponseEntity<ResponseStructure<String>>(servletStruture,HttpStatus.ACCEPTED);
 	}
 	
+	@Override
+	public ResponseEntity<CommonReponse> revokeOther(String at, String rt,
+			HttpServletResponse httpServletResponse) 
+	{
+		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		userRepo.findByUserName(username).ifPresent(user -> {
+			System.out.println("user");
+			accessTokenRepo.findByUserAndIsBlocked(user, false).ifPresent(access -> {
+				System.out.println("acc");
+				access.setBlocked(true);
+				accessTokenRepo.save(access);
+			});
+			refreshTokenRepo.findByUserAndIsBlocked(user, false).ifPresent(refresh -> {
+				System.out.println("rcc");
+				refresh.setBlocked(true);
+				refreshTokenRepo.save(refresh);
+			});
+		});
+		
+		commonStructure.setStatus(HttpStatus.ACCEPTED.value());
+		commonStructure.setMessage("User Successfully Revoked");
+		return new ResponseEntity<CommonReponse>(commonStructure,HttpStatus.ACCEPTED);	
+	}
+	
+	@Override
+	public ResponseEntity<CommonReponse> revokeOtherDeviceAccess(String accessToken,
+			String refreshToken) 
+	{
+		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		userRepo.findByUserName(username).ifPresent(user -> {
+			blockAccessToken(accessTokenRepo.findAllByUserAndIsBlockedAndTokenNot(user, false, accessToken));
+			blockRefreshToken(refreshTokenRepo.findAllByUserAndIsBlockedAndTokenNot(user, false, refreshToken));
+		});
+		commonStructure.setMessage("All other devices logged out successfully");
+		commonStructure.setStatus(HttpStatus.ACCEPTED.value());
+		return new ResponseEntity<CommonReponse>(commonStructure,HttpStatus.OK);
+		
+	}
+	
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------	
 	
 	private void grantAccess(HttpServletResponse httpServletResponse,User user)
@@ -201,6 +247,7 @@ public class AuthServiceImpl implements AuthService
 		
 		//saving the access and the refresh tokens cookies to the response
 		accessTokenRepo.save(AccessToken.builder()
+				.user(user)
 				.token(accessToken)
 				.isBlocked(false)
 				.expiration(LocalDateTime.now().plusSeconds(accessExpiryInSeconds))
@@ -208,6 +255,7 @@ public class AuthServiceImpl implements AuthService
 				);
 		
 		refreshTokenRepo.save(RefreshToken.builder()
+				.user(user)
 				.token(refreshToken)
 				.isBlocked(false)
 				.expiration(LocalDateTime.now().plusSeconds(refreshExpiryInSeconds))
@@ -306,6 +354,21 @@ public class AuthServiceImpl implements AuthService
 		case SELLER->{user=sellerRepo.save(mapToRespectiveUser(userRequest));}
 		}
 		return (T) user;
+	}
+	
+	private void blockAccessToken(List<AccessToken> accessTokens) {
+		accessTokens.forEach(at->{
+			at.setBlocked(false);
+			accessTokenRepo.save(at);
+		});
+	}
+	
+	private void blockRefreshToken(List<RefreshToken> refreshTokens)
+	{
+		refreshTokens.forEach(rt->{
+			rt.setBlocked(false);
+			refreshTokenRepo.save(rt);
+		});
 	}		
 }	
 

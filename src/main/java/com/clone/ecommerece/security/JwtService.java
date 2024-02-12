@@ -8,6 +8,8 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -35,6 +37,12 @@ public class JwtService
 		return generateJwt(new HashMap<String,Object>(),userName,refreshExpirationInSeconds*1000l);
 	}
 	
+	public String extractUserName(String token)
+	{
+		Claims claims = parserJwt(token);
+		return claims.getSubject();
+	}
+	
 	private String generateJwt(Map<String,Object> claims,String userName,Long expiry)
 	{
 		return Jwts.builder()
@@ -50,5 +58,13 @@ public class JwtService
 	{
 		byte[] secretBytes = Decoders.BASE64.decode(secret);
 		return Keys.hmacShaKeyFor(secretBytes);
+	}
+	
+	private Claims parserJwt(String token)
+	{
+//		JwtParser jwtParser = Jwts.parserBuilder().setSigningKey(getSignature()).build();
+//		return jwtParser.parseClaimsJws(token).getBody();
+//		return claims;
+		return Jwts.parserBuilder().setSigningKey(getSignature()).build().parseClaimsJws(token).getBody();
 	}
 }
