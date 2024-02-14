@@ -7,11 +7,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.clone.ecommerece.exception.AlreadyLoggedInException;
 import com.clone.ecommerece.exception.CookiesNotCreatedException;
 import com.clone.ecommerece.exception.DuplicateRegisterException;
 import com.clone.ecommerece.exception.InvalidOTPException;
 import com.clone.ecommerece.exception.OtpExpiredException;
 import com.clone.ecommerece.exception.SessionExpiredException;
+import com.clone.ecommerece.exception.TokenExpiredLoginAgainException;
 import com.clone.ecommerece.exception.UserNameAlreadyVerifiedEcxeption;
 import com.clone.ecommerece.exception.UserNotLoggedInException;
 
@@ -67,5 +69,17 @@ public class AuthExceptionHandler
 	public ResponseEntity<Object> cookiesNotCreatedException(CookiesNotCreatedException exception)
 	{
 		return error(HttpStatus.BAD_REQUEST,"Cookies not created",exception.getMessage());
+	}
+	
+	@ExceptionHandler(TokenExpiredLoginAgainException.class)
+	public ResponseEntity<Object> tokenExpiredLoginAgainException(TokenExpiredLoginAgainException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"Session Exxpired login again to access",exception.getMessage());
+	}
+	
+	@ExceptionHandler(AlreadyLoggedInException.class)
+	public ResponseEntity<Object> alreadyLoggedInException(AlreadyLoggedInException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"Already LoggedIn",exception.getMessage());
 	}
 }

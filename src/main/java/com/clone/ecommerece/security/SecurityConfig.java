@@ -1,5 +1,6 @@
 package com.clone.ecommerece.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,10 +23,12 @@ import lombok.AllArgsConstructor;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@AllArgsConstructor
+//@AllArgsConstructor
 public class SecurityConfig {
 	 
+	@Autowired
 	private CustomAuthDetailsService customAuthDetailService;
+	@Autowired
 	private JwtFilter jwtFilter;
 
 	@Bean
@@ -36,13 +39,13 @@ public class SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 		return httpSecurity.csrf(csrf -> csrf.disable())
-				.authorizeHttpRequests(auth -> auth.requestMatchers("/**").permitAll()
-						.anyRequest().authenticated())
-				.sessionManagement(management->
-					management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-					.authenticationProvider(authenticationProvider())
-					.addFilterBefore(jwtFilter,UsernamePasswordAuthenticationFilter.class)
-					.build();
+				.authorizeHttpRequests(auth -> auth.requestMatchers("/**").permitAll().anyRequest().authenticated())
+				// using formLogin
+//				.formLogin(Customizer.withDefaults())
+				.sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))//after the response sends by the endpoint it removes the authenticated object from the SecurituContextFilter 
+				.authenticationProvider(authenticationProvider())
+				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+				.build();
 	}
 
 	@Bean

@@ -16,7 +16,7 @@ import com.clone.ecommerece.requestDto.otpModel;
 import com.clone.ecommerece.responseDto.AuthResponse;
 import com.clone.ecommerece.responseDto.UserResponse;
 import com.clone.ecommerece.service.AuthService;
-import com.clone.ecommerece.util.CommonReponse;
+import com.clone.ecommerece.util.SimpleReponse;
 import com.clone.ecommerece.util.ResponseStructure;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,29 +29,29 @@ public class AuthController
 {
 	private AuthService authService;
 	
-//	@PreAuthorize(value = "hasAuthority('CUSTOMER') or hasAuthority('SELLER')")//CUSTOMER,SELLER
 	@PostMapping("/users")
 	public  ResponseEntity<ResponseStructure<UserResponse>> addUser(@RequestBody UsersRequest userRequest)
 	{
 		 return authService.addUsers(userRequest);
 	}
 	
-//	@PreAuthorize(value = "hasAuthority('CUSTOMER') or hasAuthority('SELLER')")
+	@PreAuthorize(value = "hasAuthority('CUSTOMER') or hasAuthority('SELLER')")
 	@PostMapping("/users/verifyotp")
 	public ResponseEntity<String> verifyOtp(@RequestBody otpModel otp)
 	{
 		return authService.verifyOtp(otp);
 	}
 	
-//	@PreAuthorize(value = "hasAuthority('CUSTOMER') or hasAuthority('SELLER')")
+	@PreAuthorize(value = "hasAuthority('CUSTOMER') or hasAuthority('SELLER')")
 	@PostMapping("/login")
-	public ResponseEntity<ResponseStructure<AuthResponse>> login(@RequestBody AuthRequest authRequest,HttpServletResponse httpServletResponse)
+	public ResponseEntity<ResponseStructure<AuthResponse>> login(@CookieValue(value = "at",required = false) String at,
+			@CookieValue (value = "rt",required = false)String rt,@RequestBody AuthRequest authRequest,HttpServletResponse httpServletResponse)
 	{
 		System.out.println("Logged In");
-		return authService.login(authRequest,httpServletResponse);
+		return authService.login(at,rt,authRequest,httpServletResponse);
 	}
 	
-//	@PreAuthorize(value = "hasAuthority('CUSTOMER') or hasAuthority('SELLER')")
+	@PreAuthorize(value = "hasAuthority('CUSTOMER') OR hasAuthority('SELLER')")
 	@PostMapping("/logout")
 	public ResponseEntity<ResponseStructure<String>>logout(@CookieValue(value = "at",required = false) String at,
 			@CookieValue (value = "rt",required = false)String rt,HttpServletResponse httpServletResponse)
@@ -59,19 +59,29 @@ public class AuthController
 		return authService.logout(at,rt,httpServletResponse);
 	}
 	
-//	@PreAuthorize(value = "hasAuthority('CUSTOMER') or hasAuthority('SELLER')")
-	@PostMapping
-	public ResponseEntity<CommonReponse> revokeOther(@CookieValue(value = "at",required = false) String at,
+	@PreAuthorize(value = "hasAuthority('CUSTOMER') OR hasAuthority('SELLER')")
+	@PostMapping("/revoke-all")
+	public ResponseEntity<SimpleReponse> revokeOther(@CookieValue(value = "at",required = false) String at,
 			@CookieValue (value = "rt",required = false)String rt,HttpServletResponse httpServletResponse)
 	{
 		return authService.revokeOther(at,rt,httpServletResponse);
 	}
 	
-//	@PreAuthorize(value = "hasAuthority('SELLER') or hasAuthority('CUSTOMER')")
+	@PreAuthorize(value = "hasAuthority('SELLER') OR hasAuthority('CUSTOMER')")
 	@PostMapping("/revoke-other")
-	public ResponseEntity<CommonReponse> revokeOtherDeviceAccess(
+	public ResponseEntity<SimpleReponse> revokeOtherDeviceAccess(
 			@CookieValue(name = "rt", required = false) String refreshToken,
 			@CookieValue(name = "at", required = false) String accessToken) {
 		return authService.revokeOtherDeviceAccess(accessToken, refreshToken);
 	}
+	
+	@PreAuthorize(value = "hasAuthority('SELLER') OR hasAuthority('CUSTOMER')")
+	@PostMapping("/refresh-login/token-rotation")
+	public ResponseEntity<SimpleReponse> refreshToken(@CookieValue(name = "rt", required = false) String refreshToken,
+			@CookieValue(name = "at", required = false) String accessToken,HttpServletResponse httpServletResponse)
+	{
+		return authService.refreshToken(accessToken,refreshToken,httpServletResponse);
+	}
+
+	
 }

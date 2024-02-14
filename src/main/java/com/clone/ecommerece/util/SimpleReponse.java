@@ -14,7 +14,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Component
-public class CommonReponse {
+public class SimpleReponse {
 private int status;
 private String message;
 }

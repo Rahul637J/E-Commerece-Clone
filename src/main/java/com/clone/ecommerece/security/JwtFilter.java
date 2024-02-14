@@ -40,7 +40,6 @@ public class JwtFilter extends OncePerRequestFilter{
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException 
 	{
-
 		String at = null;
 		String rt = null;
 		Cookie[] cookies = request.getCookies();
@@ -70,7 +69,6 @@ public class JwtFilter extends OncePerRequestFilter{
 					SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 					log.info("Authenticated Succesfully");
 				}
-				
 			}
 		}
 		filterChain.doFilter(request, response); //THIS WILL DELICATE THE FILTER PROCESS FOR FURTHER INBUILT FILTERS 
