@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CookieValue;
 
 import com.clone.ecommerece.cache.CacheStore;
 import com.clone.ecommerece.entity.AccessToken;
@@ -23,10 +24,12 @@ import com.clone.ecommerece.entity.Customer;
 import com.clone.ecommerece.entity.RefreshToken;
 import com.clone.ecommerece.entity.Seller;
 import com.clone.ecommerece.entity.User;
+import com.clone.ecommerece.exception.AlreadyLoggedInException;
 import com.clone.ecommerece.exception.AuthentificationFailedException;
 import com.clone.ecommerece.exception.InvalidOTPException;
 import com.clone.ecommerece.exception.OtpExpiredException;
 import com.clone.ecommerece.exception.SessionExpiredException;
+import com.clone.ecommerece.exception.TokenExpiredLoginAgainException;
 import com.clone.ecommerece.exception.UserNameAlreadyVerifiedEcxeption;
 import com.clone.ecommerece.exception.UserNotLoggedInException;
 import com.clone.ecommerece.repo.AccessTokenRepo;
@@ -41,15 +44,14 @@ import com.clone.ecommerece.responseDto.AuthResponse;
 import com.clone.ecommerece.responseDto.UserResponse;
 import com.clone.ecommerece.security.JwtService;
 import com.clone.ecommerece.service.AuthService;
-import com.clone.ecommerece.util.CommonReponse;
 import com.clone.ecommerece.util.CookieManager;
 import com.clone.ecommerece.util.MessageStructure;
 import com.clone.ecommerece.util.ResponseStructure;
+import com.clone.ecommerece.util.SimpleReponse;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
@@ -73,7 +75,7 @@ public class AuthServiceImpl implements AuthService
 	private RefreshTokenRepo refreshTokenRepo;
 	private ResponseStructure<AuthResponse> authStructure;
 	private ResponseStructure<String> servletStruture;
-	private CommonReponse commonStructure;
+	private SimpleReponse simpleStructure;
 	
 	@Value("${myapp.access.expiry}")
 	private int accessExpiryInSeconds;
@@ -88,7 +90,7 @@ public class AuthServiceImpl implements AuthService
 			JavaMailSender javaMailSender, AuthenticationManager authenticationManager, CookieManager cookieManager,
 			JwtService jwtService, AccessTokenRepo accessTokenRepo, RefreshTokenRepo refreshTokenRepo,
 			ResponseStructure<AuthResponse> authStructure, ResponseStructure<String> servletStruture,
-			CommonReponse commonStructure) {
+			SimpleReponse simpleStructure) {
 		super();
 		this.userRepo = userRepo;
 		this.sellerRepo = sellerRepo;
@@ -105,7 +107,7 @@ public class AuthServiceImpl implements AuthService
 		this.refreshTokenRepo = refreshTokenRepo;
 		this.authStructure = authStructure;
 		this.servletStruture = servletStruture;
-		this.commonStructure = commonStructure;
+		this.simpleStructure=simpleStructure;
 	}
 
 	@Override
@@ -150,7 +152,9 @@ public class AuthServiceImpl implements AuthService
 	}
 	
 	@Override
-	public ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest authRequest,HttpServletResponse httpServletResponse) {
+	public ResponseEntity<ResponseStructure<AuthResponse>> login(@CookieValue(value = "at",required = false) String at,
+			@CookieValue (value = "rt",required = false)String rt,AuthRequest authRequest,HttpServletResponse httpServletResponse) {
+		if(at!=null && rt != null) throw new AlreadyLoggedInException("Already LoggedIn");
 		String userName = authRequest.getEmail().split("@")[0];
 		UsernamePasswordAuthenticationToken token=new UsernamePasswordAuthenticationToken(userName,authRequest.getPassword());
 		Authentication authentication=authenticationManager.authenticate(token);
@@ -195,7 +199,7 @@ public class AuthServiceImpl implements AuthService
 	}
 	
 	@Override
-	public ResponseEntity<CommonReponse> revokeOther(String at, String rt,
+	public ResponseEntity<SimpleReponse> revokeOther(String at, String rt,
 			HttpServletResponse httpServletResponse) 
 	{
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -213,13 +217,13 @@ public class AuthServiceImpl implements AuthService
 			});
 		});
 		
-		commonStructure.setStatus(HttpStatus.ACCEPTED.value());
-		commonStructure.setMessage("User Successfully Revoked");
-		return new ResponseEntity<CommonReponse>(commonStructure,HttpStatus.ACCEPTED);	
+		simpleStructure.setStatus(HttpStatus.ACCEPTED.value());
+		simpleStructure.setMessage("User Successfully Revoked");
+		return new ResponseEntity<SimpleReponse>(simpleStructure,HttpStatus.ACCEPTED);	
 	}
 	
 	@Override
-	public ResponseEntity<CommonReponse> revokeOtherDeviceAccess(String accessToken,
+	public ResponseEntity<SimpleReponse> revokeOtherDeviceAccess(String accessToken,
 			String refreshToken) 
 	{
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -227,9 +231,33 @@ public class AuthServiceImpl implements AuthService
 			blockAccessToken(accessTokenRepo.findAllByUserAndIsBlockedAndTokenNot(user, false, accessToken));
 			blockRefreshToken(refreshTokenRepo.findAllByUserAndIsBlockedAndTokenNot(user, false, refreshToken));
 		});
-		commonStructure.setMessage("All other devices logged out successfully");
-		commonStructure.setStatus(HttpStatus.ACCEPTED.value());
-		return new ResponseEntity<CommonReponse>(commonStructure,HttpStatus.OK);
+		simpleStructure.setMessage("All other devices logged out successfully");
+		simpleStructure.setStatus(HttpStatus.ACCEPTED.value());
+		return new ResponseEntity<SimpleReponse>(simpleStructure,HttpStatus.OK);	
+	}
+	
+	@Override
+	public ResponseEntity<SimpleReponse> refreshToken(String accessToken, String refreshToken,
+			HttpServletResponse httpServletResponse) 
+	{
+		if(refreshToken==null)throw new TokenExpiredLoginAgainException("Login To access");
+		if(accessToken!=null)
+			{
+				accessTokenRepo.findByToken(accessToken).ifPresent(access->{
+					access.setBlocked(true);
+					accessTokenRepo.save(access);
+				});
+			
+			}
+	
+			refreshTokenRepo.findByToken(refreshToken).ifPresent(refresh->{
+				refresh.setBlocked(true);
+				refreshTokenRepo.save(refresh);
+				grantAccess(httpServletResponse, refresh.getUser());
+			});
+			simpleStructure.setStatus(HttpStatus.CREATED.value());
+			simpleStructure.setMessage("Access Granted");
+			return new ResponseEntity<SimpleReponse>(simpleStructure,HttpStatus.CREATED);
 		
 	}
 	
