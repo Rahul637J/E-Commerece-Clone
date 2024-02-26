@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.clone.ecommerece.exception.AlreadyLoggedInException;
+import com.clone.ecommerece.exception.AuthFailedException;
 import com.clone.ecommerece.exception.CookiesNotCreatedException;
 import com.clone.ecommerece.exception.DuplicateRegisterException;
+import com.clone.ecommerece.exception.IncorrectPasswordOrEmailException;
 import com.clone.ecommerece.exception.InvalidOTPException;
 import com.clone.ecommerece.exception.OtpExpiredException;
 import com.clone.ecommerece.exception.SessionExpiredException;
@@ -65,6 +67,12 @@ public class AuthExceptionHandler
 		return error(HttpStatus.BAD_REQUEST,"LogIn first to logout",exception.getMessage());
 	}
 	
+	@ExceptionHandler(IncorrectPasswordOrEmailException.class)
+	public ResponseEntity<Object> incorrectPasswordOrEmailException(IncorrectPasswordOrEmailException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"Incorrect Password",exception.getMessage());
+	}
+	
 	@ExceptionHandler(CookiesNotCreatedException.class)
 	public ResponseEntity<Object> cookiesNotCreatedException(CookiesNotCreatedException exception)
 	{
@@ -79,6 +87,12 @@ public class AuthExceptionHandler
 	
 	@ExceptionHandler(AlreadyLoggedInException.class)
 	public ResponseEntity<Object> alreadyLoggedInException(AlreadyLoggedInException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"Already LoggedIn",exception.getMessage());
+	}
+	
+	@ExceptionHandler(AuthFailedException.class)
+	public ResponseEntity<Object> authFailedException(AuthFailedException exception)
 	{
 		return error(HttpStatus.BAD_REQUEST,"Already LoggedIn",exception.getMessage());
 	}

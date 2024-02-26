@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,4 +38,10 @@ public class User
 	private UserRole userRole;
 	private boolean isEmailVerified;
 	private boolean isDeleted;	
+	
+	@OneToOne
+	private Address address;
+	
+	@OneToOne
+	private Store store;
 }

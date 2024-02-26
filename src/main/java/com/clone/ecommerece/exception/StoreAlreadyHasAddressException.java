@@ -1,4 +1,4 @@
-package com.clone.ecommerece.requestDto;
+package com.clone.ecommerece.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,9 +9,7 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class otpModel 
-{
-	private String email;
-	private String otp;
+public class StoreAlreadyHasAddressException extends RuntimeException {
+	private String message;
 
 }

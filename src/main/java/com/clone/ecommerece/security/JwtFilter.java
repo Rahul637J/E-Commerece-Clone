@@ -12,10 +12,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.clone.ecommerece.entity.AccessToken;
+import com.clone.ecommerece.exception.AuthFailedException;
 import com.clone.ecommerece.exception.ConstraintViolationException;
 import com.clone.ecommerece.exception.CookiesNotCreatedException;
 import com.clone.ecommerece.exception.UserNotLoggedInException;
 import com.clone.ecommerece.repo.AccessTokenRepo;
+import com.clone.ecommerece.repo.RefreshTokenRepo;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,6 +35,7 @@ public class JwtFilter extends OncePerRequestFilter{
 	private AccessTokenRepo accessTokenRepo;
 	private JwtService jwtService;
 	private CustomAuthDetailsService authDetailsService;
+	private RefreshTokenRepo refreshTokenRepo;
 	
 	//THIS IS THE CUSTOM FILTER WHICH WE USED TO AUTHENTICATE THE CRENDITALS AND PASS THE REQUEST FOR THE FURTHER PROCESS 
 	//NOTE- THERE IS NO ANY PRE-DEFINED WAY TO CREATE A FILTER THE CUSTOM FILTER IS ONLY CREATED BY OUR OWN LOGIC 
@@ -42,6 +45,7 @@ public class JwtFilter extends OncePerRequestFilter{
 	{
 		String at = null;
 		String rt = null;
+		
 		Cookie[] cookies = request.getCookies();
 		log.info("In Jwt filter");
 		if (cookies != null) {
@@ -53,13 +57,13 @@ public class JwtFilter extends OncePerRequestFilter{
 			}
 			log.info("Trying Authenticating the token.....");
 			String username = null;
-			if (at != null && rt != null) {
-				Optional<AccessToken> accesstoken = accessTokenRepo.findByTokenAndIsBlocked(at, false);
-				if (accesstoken == null)
-					throw new UserNotLoggedInException("Token is blocked");
+			if (rt != null) {
+				boolean refreshToken=refreshTokenRepo.existsByTokenAndIsBlocked(rt,false);
+//				Optional<AccessToken> accesstoken = accessTokenRepo.findByTokenAndIsBlocked(at, false);
+				if (!refreshToken) throw new UserNotLoggedInException("Token is blocked");
 				else {
 					log.info("Authenticating the token.....");
-					username = jwtService.extractUserName(at);
+					username = jwtService.extractUserName(rt);
 					if (username == null)
 						throw new ConstraintViolationException("Failed to Authenticate");
 					 UserDetails userDetails = authDetailsService.loadUserByUsername(username);
