@@ -15,6 +15,23 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
+
+
+//import java.security.Key;
+//import java.util.Date;
+//import java.util.HashMap;
+//import java.util.Map;
+//
+//import org.springframework.beans.factory.annotation.Value;
+//import org.springframework.stereotype.Service;
+//
+//import io.jsonwebtoken.Claims;
+//import io.jsonwebtoken.JwtParser;
+//import io.jsonwebtoken.Jwts;
+//import io.jsonwebtoken.SignatureAlgorithm;
+//import io.jsonwebtoken.io.Decoders;
+//import io.jsonwebtoken.security.Keys;
+
 @Service
 public class JwtService 
 {
@@ -53,7 +70,7 @@ public class JwtService
 				.signWith(getSignature(),SignatureAlgorithm.HS512)
 				.compact();
 	}
-	
+	 
 	private Key getSignature()
 	{
 		byte[] secretBytes = Decoders.BASE64.decode(secret);
@@ -62,9 +79,9 @@ public class JwtService
 	
 	private Claims parserJwt(String token)
 	{
-//		JwtParser jwtParser = Jwts.parserBuilder().setSigningKey(getSignature()).build();
-//		return jwtParser.parseClaimsJws(token).getBody();
+		JwtParser jwtParser = Jwts.parserBuilder().setSigningKey(getSignature()).build();
+		return jwtParser.parseClaimsJws(token).getBody();
 //		return claims;
-		return Jwts.parserBuilder().setSigningKey(getSignature()).build().parseClaimsJws(token).getBody();
+//		return Jwts.parserBuilder().setSigningKey(getSignature()).build().parseClaimsJws(token).getBody();
 	}
 }

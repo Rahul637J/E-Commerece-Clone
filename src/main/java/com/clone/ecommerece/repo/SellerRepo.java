@@ -6,5 +6,4 @@ import com.clone.ecommerece.entity.Seller;
 
 public interface SellerRepo extends JpaRepository<Seller, Integer>{
 	
-
 }

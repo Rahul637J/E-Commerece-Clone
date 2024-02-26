@@ -3,6 +3,7 @@ package com.clone.ecommerece.serviceimpl;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,7 @@ import com.clone.ecommerece.entity.Seller;
 import com.clone.ecommerece.entity.User;
 import com.clone.ecommerece.exception.AlreadyLoggedInException;
 import com.clone.ecommerece.exception.AuthentificationFailedException;
+import com.clone.ecommerece.exception.IncorrectPasswordOrEmailException;
 import com.clone.ecommerece.exception.InvalidOTPException;
 import com.clone.ecommerece.exception.OtpExpiredException;
 import com.clone.ecommerece.exception.SessionExpiredException;
@@ -39,7 +41,7 @@ import com.clone.ecommerece.repo.SellerRepo;
 import com.clone.ecommerece.repo.UserRepo;
 import com.clone.ecommerece.requestDto.AuthRequest;
 import com.clone.ecommerece.requestDto.UsersRequest;
-import com.clone.ecommerece.requestDto.otpModel;
+import com.clone.ecommerece.requestDto.OtpModel;
 import com.clone.ecommerece.responseDto.AuthResponse;
 import com.clone.ecommerece.responseDto.UserResponse;
 import com.clone.ecommerece.security.JwtService;
@@ -81,8 +83,6 @@ public class AuthServiceImpl implements AuthService
 	private int accessExpiryInSeconds;
 	@Value("${myapp.refresh.expiry}")
 	private int refreshExpiryInSeconds;
-	
-
 
 	public AuthServiceImpl(UserRepo userRepo, SellerRepo sellerRepo, CustomerRepo customerRepo,
 			PasswordEncoder passwordEncoder, CacheStore<String> cacheStoreOtp,
@@ -91,7 +91,7 @@ public class AuthServiceImpl implements AuthService
 			JwtService jwtService, AccessTokenRepo accessTokenRepo, RefreshTokenRepo refreshTokenRepo,
 			ResponseStructure<AuthResponse> authStructure, ResponseStructure<String> servletStruture,
 			SimpleReponse simpleStructure) {
-		super();
+//		super();
 		this.userRepo = userRepo;
 		this.sellerRepo = sellerRepo;
 		this.customerRepo = customerRepo;
@@ -132,11 +132,12 @@ public class AuthServiceImpl implements AuthService
 	}
 
 	@Override
-	public ResponseEntity<String> verifyOtp(otpModel otp) 
+	public ResponseEntity<String> verifyOtp(OtpModel otp) 
 	{
+		System.out.println(" entered ");
 		User user = cacheStoreuser.get(otp.getEmail());
 		String OTP = cacheStoreOtp.get(otp.getEmail());
-//		System.out.println(OTP);
+		System.out.println(OTP);
 		if(user==null) throw new SessionExpiredException("Session expired ===> Register again");	
 		if(otp==null) throw new OtpExpiredException("OTP expired ===> click resend OTP");
 //		System.out.println(otp.getOtp());
@@ -152,13 +153,13 @@ public class AuthServiceImpl implements AuthService
 	}
 	
 	@Override
-	public ResponseEntity<ResponseStructure<AuthResponse>> login(@CookieValue(value = "at",required = false) String at,
-			@CookieValue (value = "rt",required = false)String rt,AuthRequest authRequest,HttpServletResponse httpServletResponse) {
+	public ResponseEntity<ResponseStructure<AuthResponse>> login( String at,
+			String rt,AuthRequest authRequest,HttpServletResponse httpServletResponse) {
 		if(at!=null && rt != null) throw new AlreadyLoggedInException("Already LoggedIn");
 		String userName = authRequest.getEmail().split("@")[0];
 		UsernamePasswordAuthenticationToken token=new UsernamePasswordAuthenticationToken(userName,authRequest.getPassword());
 		Authentication authentication=authenticationManager.authenticate(token);
-		if(!authentication.isAuthenticated()) throw new AuthentificationFailedException("Username or Password Incorrect");
+		if(!authentication.isAuthenticated()) throw new IncorrectPasswordOrEmailException("Username or Password Incorrect");
 		else 
 			//generating the cookies and authResponse and returning to the client
 			return userRepo.findByUserName(authRequest.getEmail().split("@")[0]).map(user->{
@@ -237,7 +238,7 @@ public class AuthServiceImpl implements AuthService
 	}
 	
 	@Override
-	public ResponseEntity<SimpleReponse> refreshToken(String accessToken, String refreshToken,
+	public ResponseEntity<ResponseStructure<AuthResponse>> refreshToken(String accessToken, String refreshToken,
 			HttpServletResponse httpServletResponse) 
 	{
 		if(refreshToken==null)throw new TokenExpiredLoginAgainException("Login To access");
@@ -246,22 +247,28 @@ public class AuthServiceImpl implements AuthService
 				accessTokenRepo.findByToken(accessToken).ifPresent(access->{
 					access.setBlocked(true);
 					accessTokenRepo.save(access);
-				});
-			
+				});		
 			}
-	
-			refreshTokenRepo.findByToken(refreshToken).ifPresent(refresh->{
+				return refreshTokenRepo.findByToken(refreshToken).map(refresh->{
 				refresh.setBlocked(true);
 				refreshTokenRepo.save(refresh);
 				grantAccess(httpServletResponse, refresh.getUser());
-			});
-			simpleStructure.setStatus(HttpStatus.CREATED.value());
-			simpleStructure.setMessage("Access Granted");
-			return new ResponseEntity<SimpleReponse>(simpleStructure,HttpStatus.CREATED);
-		
-	}
-	
+				
+				return ResponseEntity.ok(authStructure.setStatus(HttpStatus.OK.value())
+						.setData(AuthResponse.builder()
+						.userId(refresh.getUser().getUserId())
+						.username(refresh.getUser().getUserName())
+						.role(refresh.getUser().getUserRole().name())
+						.isAuthenticated(true)
+						.accessExpiratioin(LocalDateTime.now().plusSeconds(accessExpiryInSeconds))
+						.refreshExpiration(LocalDateTime.now().plusSeconds(refreshExpiryInSeconds))
+						.build())
+						.setMsg(""));
+				}).get();
+}
+
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------	
+	
 	
 	private void grantAccess(HttpServletResponse httpServletResponse,User user)
 	{
@@ -271,7 +278,7 @@ public class AuthServiceImpl implements AuthService
 		
 		//adding access anf refresh tokens cookies to the response
 		httpServletResponse.addCookie(cookieManager.configure(new Cookie("at", accessToken), accessExpiryInSeconds));
-		httpServletResponse.addCookie(cookieManager.configure(new Cookie("rt", refreshToken), accessExpiryInSeconds));
+		httpServletResponse.addCookie(cookieManager.configure(new Cookie("rt", refreshToken), refreshExpiryInSeconds));
 		
 		//saving the access and the refresh tokens cookies to the response
 		accessTokenRepo.save(AccessToken.builder()
@@ -310,8 +317,7 @@ public class AuthServiceImpl implements AuthService
 	
 	private void sendOtpToMail(User user,String OTP)throws MessagingException
 	{
-		sendMail(
-		MessageStructure.builder()
+		sendMail( MessageStructure.builder()
 		.to(user.getEmail())
 		.subject("Complete your verification by using this OTP")
 		.sentDate(new Date())
@@ -323,14 +329,13 @@ public class AuthServiceImpl implements AuthService
 				+"<h3>Note: The Method Is Expired In 5 Minutes<h3>"
 				+"<br><br>"
 				+"<h3>With Best Regards<h3><br>"
-				+"<h1>E-Commerce Api<h1>"
+				+"<h1>RJ Online Shopping<h1>"
 				).build());
 	}
 	
 	private void sendResponseToMail(User user)throws MessagingException
 	{
-		sendMail(
-		MessageStructure.builder()
+		sendMail( MessageStructure.builder()
 		.to(user.getEmail())
 		.subject("Complete your verification by using this OTP")
 		.sentDate(new Date())
@@ -343,7 +348,7 @@ public class AuthServiceImpl implements AuthService
 						+"<h3>Let's get started on your e-commerce journey! 🚀<h3>"
 						+"<br>"
 						+"<h3>With Best Regards<h3><br>"
-						+"<h2>Mr.Somnath<h2>"
+						+"<h2>Mr.Rahul<h2>"
 						+"<h1>E-Commerce Api<h1>"
 				).build());
 	}
@@ -371,6 +376,7 @@ public class AuthServiceImpl implements AuthService
 				.email(saveUser.getEmail())
 				.isEmailVerified(saveUser.isEmailVerified())
 				.userRole(saveUser.getUserRole())
+				.store(saveUser.getStore())
 				.build();	
 	}
 	

@@ -1,5 +1,6 @@
 package com.clone.ecommerece.responseDto;
 
+import com.clone.ecommerece.entity.Store;
 import com.clone.ecommerece.enums.UserRole;
 
 import lombok.AllArgsConstructor;
@@ -21,4 +22,5 @@ public class UserResponse {
 	private UserRole userRole;
 	private boolean isEmailVerified;
 	private boolean isDeleted;
+	private Store store;
 }
