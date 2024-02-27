@@ -26,7 +26,6 @@ public class ContactController
 {
 	private ContactService service;
 	
-	
 	@PostMapping("/contacts/{addressId}")
 	public ResponseEntity<ResponseStructure<ContactResponse>> addContact(@RequestBody ContactRequest request,@PathVariable int addressId)
 	{

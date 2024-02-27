@@ -19,4 +19,5 @@ public class Image {
 	@Enumerated(EnumType.STRING)
 	private ImageType imageType;
 	private byte[] imageBytes;
+	private String contentType;
 }

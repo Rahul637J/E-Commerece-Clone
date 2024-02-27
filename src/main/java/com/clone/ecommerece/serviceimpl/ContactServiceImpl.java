@@ -18,7 +18,6 @@ import com.clone.ecommerece.service.ContactService;
 import com.clone.ecommerece.util.ResponseStructure;
 
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 
 @Service
 @AllArgsConstructor
@@ -63,10 +62,10 @@ public class ContactServiceImpl implements ContactService
 	@Override
 	public ResponseEntity<ResponseStructure<ContactResponse>> findContactById(int contactId) {
 		return contactRepo.findById(contactId).map(contact->{
-			responseStructure.setStatus(HttpStatus.CREATED.value());
+			responseStructure.setStatus(HttpStatus.OK.value());
 			responseStructure.setMsg("Contact saved successfully");
 			responseStructure.setData(mapToResponse(contact));
-			return new ResponseEntity<ResponseStructure<ContactResponse>>(responseStructure,HttpStatus.FOUND);
+			return new ResponseEntity<ResponseStructure<ContactResponse>>(responseStructure,HttpStatus.OK);
 		}).orElseThrow(()-> new ContactNotFindById("Invalid Contact ID"));
 	}
 
@@ -76,12 +75,12 @@ public class ContactServiceImpl implements ContactService
 			    List<Contact> contactList = address.getContactList();
 			    for(Contact contact:contactList)
 			    {
-			    	responseStructure.setStatus(HttpStatus.CREATED.value());
+			    	responseStructure.setStatus(HttpStatus.OK.value());
 					responseStructure.setMsg("Contact saved successfully");
 					responseStructure.setData(mapToResponse(contact));
-					return new ResponseEntity<ResponseStructure<ContactResponse>>(responseStructure,HttpStatus.FOUND);
+					return new ResponseEntity<ResponseStructure<ContactResponse>>(responseStructure,HttpStatus.OK);
 			    }
-			    return new ResponseEntity<ResponseStructure<ContactResponse>>(responseStructure,HttpStatus.FOUND);
+			    return new ResponseEntity<ResponseStructure<ContactResponse>>(responseStructure,HttpStatus.OK);
 		}).orElseThrow(()-> new AddressNotFoundById("Invalid Store Id"));
 	}
 	

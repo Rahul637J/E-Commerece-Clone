@@ -9,5 +9,5 @@ import lombok.Setter;
 @Setter
 @Getter
 public class ProductImage extends Image{
-	private String productId;
+	private int productId;
 }

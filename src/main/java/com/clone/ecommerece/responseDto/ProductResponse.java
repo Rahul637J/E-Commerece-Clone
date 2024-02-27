@@ -1,26 +1,19 @@
-package com.clone.ecommerece.entity;
+package com.clone.ecommerece.responseDto;
 
 import com.clone.ecommerece.enums.AvailabilityStatus;
 
-import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity
 @Setter
 @Getter
 @Builder
 @AllArgsConstructor
-public class Product {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ProductResponse {
 	private int productId;
 	private String productName;
 	private String productDescription;

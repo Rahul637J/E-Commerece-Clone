@@ -1,6 +1,7 @@
 package com.clone.ecommerece.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,8 @@ import lombok.AllArgsConstructor;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/e-commerec/v1/api")
+//This is called CORS Configuration (CROSS ORIGIN RESOURCE SHARE)
+@CrossOrigin(allowCredentials = "true",origins = "http://localhost:5173/")
 public class ImageController 
 {
 	private ImageService imageService;
