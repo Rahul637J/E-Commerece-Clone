@@ -97,7 +97,6 @@ public class ContactServiceImpl implements ContactService
 	private ContactResponse mapToResponse(Contact save) {
 		return ContactResponse.builder()
 				.contactId(save.getContactId())
-				.address(save.getAddress())
 				.contactName(save.getContactName())
 				.contactNumber(save.getContactNumber())
 				.priority(save.getPriority())

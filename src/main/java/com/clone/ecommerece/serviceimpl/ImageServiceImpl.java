@@ -52,6 +52,7 @@ public class ImageServiceImpl implements ImageService
 			StoreImage storeImage=new StoreImage();
 			storeImage.setStoreId(storeId);
 			storeImage.setImageType(ImageType.COVER);
+			storeImage.setContentType(image.getContentType());
 			try {
 				storeImage.setImageBytes(image.getBytes());
 			} catch (IOException e) {
@@ -72,6 +73,7 @@ public class ImageServiceImpl implements ImageService
 			ProductImage productImage=new ProductImage();
 			productImage.setProductId(productId);
 			productImage.setImageType(ImageType.LOGO);
+			productImage.setContentType(image.getContentType());
 			try {
 				productImage.setImageBytes(image.getBytes());
 			} catch (IOException e) {

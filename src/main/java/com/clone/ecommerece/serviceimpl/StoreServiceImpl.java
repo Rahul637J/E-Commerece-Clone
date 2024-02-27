@@ -1,5 +1,6 @@
 package com.clone.ecommerece.serviceimpl;
 
+import org.hibernate.internal.build.AllowSysOut;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -66,6 +67,7 @@ public class StoreServiceImpl implements StoreService{
 	{
 		return sellerRepo.findById(sellerId).map(user->{
 			if(user.getUserRole()==UserRole.SELLER) {
+				System.out.println(user.getStore());
 				responseStructure.setStatus(HttpStatus.FOUND.value());
 				responseStructure.setMsg("Store Data Saved Successfully");
 				responseStructure.setData(MapToResponse(user.getStore()));

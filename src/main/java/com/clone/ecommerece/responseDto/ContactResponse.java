@@ -1,6 +1,5 @@
 package com.clone.ecommerece.responseDto;
 
-import com.clone.ecommerece.entity.Address;
 import com.clone.ecommerece.enums.Priority;
 
 import lombok.AllArgsConstructor;
@@ -19,5 +18,4 @@ public class ContactResponse {
 	private String contactName;
 	private long contactNumber;
 	private Priority priority;
-	private Address address;
 }
