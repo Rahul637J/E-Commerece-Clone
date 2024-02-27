@@ -1,5 +1,7 @@
 package com.clone.ecommerece.entity;
 
+import java.util.List;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,5 +30,8 @@ public class Store {
 	
 	@OneToOne
 	private Address address;
-
+	
+	@OneToMany(mappedBy = "store")
+	private List<Product> product;
+	
 }

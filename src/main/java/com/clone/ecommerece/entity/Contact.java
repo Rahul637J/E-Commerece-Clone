@@ -33,7 +33,7 @@ public class Contact
 	@Enumerated(EnumType.STRING)
 	private Priority priority;
 	
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne
 	@JsonIgnore
 	private Address address;
 }

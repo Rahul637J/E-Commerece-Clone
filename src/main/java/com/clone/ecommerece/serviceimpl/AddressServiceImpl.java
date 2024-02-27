@@ -41,11 +41,11 @@ public class AddressServiceImpl implements AddressService{
 			store.setAddress(address);
 			addressRepo.save(address);
 			storeRepo.save(store);
-			responseStructure.setStatus(HttpStatus.CREATED.value());
+			responseStructure.setStatus(HttpStatus.OK.value());
 			responseStructure.setMsg("Address Saved to store successfully");
 			responseStructure.setData(mapToResponse(address));
 			}
-			return new ResponseEntity<ResponseStructure<AddressResponse>>(responseStructure,HttpStatus.CREATED);
+			return new ResponseEntity<ResponseStructure<AddressResponse>>(responseStructure,HttpStatus.OK);
 
 		}).orElseThrow(()-> new StoreNotFoundByIdException("Store Not Found By Id"));
 	}

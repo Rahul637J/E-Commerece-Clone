@@ -38,10 +38,8 @@ public class User
 	private UserRole userRole;
 	private boolean isEmailVerified;
 	private boolean isDeleted;	
-	
+
 	@OneToOne
 	private Address address;
 	
-	@OneToOne
-	private Store store;
 }

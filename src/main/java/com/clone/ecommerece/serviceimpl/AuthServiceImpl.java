@@ -376,11 +376,10 @@ public class AuthServiceImpl implements AuthService
 				.email(saveUser.getEmail())
 				.isEmailVerified(saveUser.isEmailVerified())
 				.userRole(saveUser.getUserRole())
-				.store(saveUser.getStore())
 				.build();	
 	}
 	
-	private <T extends User>T saveUser(UsersRequest userRequest) 
+	private <T extends User> T saveUser(UsersRequest userRequest) 
 	{
 		User user=null;
 		switch (userRequest.getUserRole()) {
