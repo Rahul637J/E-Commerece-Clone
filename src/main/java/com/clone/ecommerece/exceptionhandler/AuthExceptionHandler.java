@@ -7,11 +7,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.clone.ecommerece.exception.AlreadyLoggedInException;
+import com.clone.ecommerece.exception.AuthFailedException;
+import com.clone.ecommerece.exception.CookiesNotCreatedException;
 import com.clone.ecommerece.exception.DuplicateRegisterException;
+import com.clone.ecommerece.exception.IncorrectPasswordOrEmailException;
 import com.clone.ecommerece.exception.InvalidOTPException;
 import com.clone.ecommerece.exception.OtpExpiredException;
 import com.clone.ecommerece.exception.SessionExpiredException;
+import com.clone.ecommerece.exception.TokenExpiredLoginAgainException;
 import com.clone.ecommerece.exception.UserNameAlreadyVerifiedEcxeption;
+import com.clone.ecommerece.exception.UserNotLoggedInException;
 
 @RestControllerAdvice
 public class AuthExceptionHandler 
@@ -38,13 +44,13 @@ public class AuthExceptionHandler
 	}
 	
 	@ExceptionHandler(SessionExpiredException.class)
-	public ResponseEntity<Object> SessionExpiredExceptionException(SessionExpiredException exception)
+	public ResponseEntity<Object> sessionExpiredExceptionException(SessionExpiredException exception)
 	{
 		return error(HttpStatus.BAD_REQUEST,"Session Expired Re-register",exception.getMessage());
 	}
 	
 	@ExceptionHandler(OtpExpiredException.class)
-	public ResponseEntity<Object> OtpExpiredException(OtpExpiredException exception)
+	public ResponseEntity<Object> otpExpiredException(OtpExpiredException exception)
 	{
 		return error(HttpStatus.BAD_REQUEST,"OTP Expired Re-send OTP",exception.getMessage());
 	}
@@ -52,8 +58,42 @@ public class AuthExceptionHandler
 	@ExceptionHandler(InvalidOTPException.class)
 	public ResponseEntity<Object> invalidOTPException(InvalidOTPException exception)
 	{
-		return error(HttpStatus.BAD_REQUEST,"OTP Expired Re-send OTP",exception.getMessage());
+		return error(HttpStatus.BAD_REQUEST,"OTP Not matched!!!",exception.getMessage());
 	}
 	
-
+	@ExceptionHandler(UserNotLoggedInException.class)
+	public ResponseEntity<Object> userNotLoggedInException(UserNotLoggedInException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"LogIn first to logout",exception.getMessage());
+	}
+	
+	@ExceptionHandler(IncorrectPasswordOrEmailException.class)
+	public ResponseEntity<Object> incorrectPasswordOrEmailException(IncorrectPasswordOrEmailException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"Incorrect Password",exception.getMessage());
+	}
+	
+	@ExceptionHandler(CookiesNotCreatedException.class)
+	public ResponseEntity<Object> cookiesNotCreatedException(CookiesNotCreatedException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"Cookies not created",exception.getMessage());
+	}
+	
+	@ExceptionHandler(TokenExpiredLoginAgainException.class)
+	public ResponseEntity<Object> tokenExpiredLoginAgainException(TokenExpiredLoginAgainException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"Session Exxpired login again to access",exception.getMessage());
+	}
+	
+	@ExceptionHandler(AlreadyLoggedInException.class)
+	public ResponseEntity<Object> alreadyLoggedInException(AlreadyLoggedInException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"Already LoggedIn",exception.getMessage());
+	}
+	
+	@ExceptionHandler(AuthFailedException.class)
+	public ResponseEntity<Object> authFailedException(AuthFailedException exception)
+	{
+		return error(HttpStatus.BAD_REQUEST,"Already LoggedIn",exception.getMessage());
+	}
 }

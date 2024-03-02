@@ -21,4 +21,5 @@ public class UserResponse {
 	private UserRole userRole;
 	private boolean isEmailVerified;
 	private boolean isDeleted;
+	private int store;
 }
