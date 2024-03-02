@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +54,7 @@ import com.clone.ecommerece.util.SimpleReponse;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -113,12 +115,14 @@ public class AuthServiceImpl implements AuthService
 	@Override
 	public ResponseEntity<ResponseStructure<UserResponse>> addUsers(UsersRequest userRequest) 
 	{
-		System.out.println(userRepo.existsByEmail(userRequest.getEmail())+" ,122");
+//		System.out.println(userRepo.existsByEmail(userRequest.getEmail())+" ,122");
 		if(userRepo.existsByEmail(userRequest.getEmail()))throw new UserNameAlreadyVerifiedEcxeption("User Already Exists");
 			String OTP=otpGenerator();
+//			System.out.println(OTP);
 			User user = mapToRespectiveUser(userRequest);
 			cacheStoreuser.add(userRequest.getEmail(), user);
 			cacheStoreOtp.add(userRequest.getEmail(), OTP);
+			System.out.println(cacheStoreOtp.get(userRequest.getEmail()));
 			try {
 				sendOtpToMail(user, OTP);
 			} catch (MessagingException e) {
@@ -134,12 +138,16 @@ public class AuthServiceImpl implements AuthService
 	@Override
 	public ResponseEntity<String> verifyOtp(OtpModel otp) 
 	{
+
 		System.out.println(" entered ");
 		User user = cacheStoreuser.get(otp.getEmail());
 		String OTP = cacheStoreOtp.get(otp.getEmail());
 		System.out.println(OTP);
 		if(user==null) throw new SessionExpiredException("Session expired ===> Register again");	
 		if(otp==null) throw new OtpExpiredException("OTP expired ===> click resend OTP");
+
+	
+
 //		System.out.println(otp.getOtp());
 		if(!OTP.equals(otp.getOtp())) throw new InvalidOTPException("OTP mismatch");
 		user.setEmailVerified(true);
@@ -317,6 +325,7 @@ public class AuthServiceImpl implements AuthService
 	
 	private void sendOtpToMail(User user,String OTP)throws MessagingException
 	{
+
 		sendMail( MessageStructure.builder()
 		.to(user.getEmail())
 		.subject("Complete your verification by using this OTP")
@@ -331,23 +340,41 @@ public class AuthServiceImpl implements AuthService
 				+"<h3>With Best Regards<h3><br>"
 				+"<h1>RJ Online Shopping<h1>"
 				).build());
+
+		sendMail( MessageStructure.builder()
+				.to(user.getEmail())
+				.subject("Complete Your Registration to E-Commerce Api")
+				.sentDate(new Date())
+				.text(
+						"hey, "+user.getUserName()
+						+"<h3>Good To See You Intrested in Our E-Commerce Api,<h3>"
+						+"<h3>Complete Your Registration Using the OTP<h3> <br>"
+						+"<h1>"+OTP+"<h1><br>"
+						+"<h3>Note: The Method Is Expired In 5 Minutes<h3>"
+						+"<br><br>"
+						+"<h3>With Best Regards<h3><br>"
+						+"<h1>E-Commerce Api<h1>"
+						).build());
+
 	}
 	
 	private void sendResponseToMail(User user)throws MessagingException
 	{
 		sendMail( MessageStructure.builder()
+
 		.to(user.getEmail())
 		.subject("Complete your verification by using this OTP")
 		.sentDate(new Date())
 		.text(
 				"Dear, "+"<h2>"+user.getUserName()+"<h2>"
-						+"<h3>Congratulations! 🎉..,Good To See You Intrested in Our E-Commerce Api,<h3>"
-						+"<h3>Sucessfully Completed Your Registration to E-Commerce Api<h3> <br>"
-						+"<h3>Your email has been successfully verified, and you're now officially registered with E-Commerce Api.<h3>"
-						+"<br>"
-						+"<h3>Let's get started on your e-commerce journey! 🚀<h3>"
-						+"<br>"
-						+"<h3>With Best Regards<h3><br>"
+
+				.to(user.getEmail())
+				.subject("Welcome to E-Commerce Api!")
+				.sentDate(new Date())
+				.text(
+						"Dear, "+"<h2>"+user.getUserName()+"<h2>"
+
+
 						+"<h2>Mr.Rahul<h2>"
 						+"<h1>E-Commerce Api<h1>"
 				).build());
@@ -401,7 +428,8 @@ public class AuthServiceImpl implements AuthService
 		refreshTokens.forEach(rt->{
 			rt.setBlocked(false);
 			refreshTokenRepo.save(rt);
-		});
+		}
+>
 	}		
 }	
 
